@@ -2,6 +2,7 @@
 from tkinter import messagebox, Tk
 import pygame
 import sys
+pygame.init()
 
 # Window dimensions
 window_width= 500
@@ -15,8 +16,10 @@ rows = 25
 box_width= window_width // columns
 box_height= window_width // rows
 
+
 grid = []
 queue = []
+path = []
 
 class Box:
     def __init__(self,xPos,yPos):
@@ -29,6 +32,7 @@ class Box:
         self.queued = False
         self.visited = False
         self.neighbors = []
+        self.prior = None
 
     def draw(self, win, color):
         # draws rectangle with x-cord, y-cord, width,and height
@@ -49,6 +53,7 @@ class Box:
 
 
 # Makes the grid
+
 for i in range(columns):
     # clears arr for the next row of boxes
     arr = []
@@ -66,7 +71,7 @@ for i in range(columns):
 
 
 # ininitalize the starting poiint
-start_box = grid[0][0]
+start_box = grid[5][5]
 start_box.start = True
 start_box.visited = True
 # adds starting point in the queue
@@ -91,22 +96,23 @@ def main():
                 y = pygame.mouse.get_pos()[1]
 
                 # Makes wall [0] = left mouse button
-                if event.buttons[0]:
+                if event.buttons[0] and y<window_height:
                     i = x // box_width
                     j = y // box_height
                     print(i,"-",j)
                     grid[i][j].wall = True
 
                 # Set Target with [2] = Right mouse button and makes sure theres no target alredy set so we cant change target anymore
-                if event.buttons[2] and not target_box_set:
+                if event.buttons[2] and not target_box_set and y<window_height:
                     target_box_set = True
                     i = x // box_width
                     j = y // box_height
                     target_box = grid[i][j]
                     target_box.target = True
             # Start Algorithm
-            if event.type == pygame.KEYDOWN and target_box_set:
-                begin_search = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and target_box_set:
+                    begin_search = True
 
         if begin_search:
             # if theres boxes to search in queue when its >0
@@ -116,11 +122,16 @@ def main():
                 # checks for target box
                 if current_box == target_box:
                     searching = False
+                    # saves shortest path in path varaible from start to target
+                    while current_box.prior != start_box:
+                        path.append(current_box.prior)
+                        current_box = current_box.prior
                 else:
                     # iterates through neighbouts, if its not in queue then we add it
                     for neighbor in current_box.neighbors:
                         if not neighbor.queued and not neighbor.wall:
                             queue.append(neighbor)
+                            neighbor.prior = current_box
                             neighbor.queued = True
             # If no solution
             else:
@@ -142,6 +153,8 @@ def main():
                     box.draw(window, (200,0,0))
                 if box.visited:
                     box.draw(window, (0,200,0))
+                if box in path:
+                    box.draw(window, (0,0,200))
 
                 if box.start:
                     box.draw(window, (0,200,200))
