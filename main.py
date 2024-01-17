@@ -8,7 +8,7 @@ pygame.init()
 window_width= 500
 window_height= 500
 
-window = pygame.display.set_mode((window_width, window_height))
+window = pygame.display.set_mode((window_width, window_height+60))
 
 columns = 25
 rows = 25
@@ -16,10 +16,32 @@ rows = 25
 box_width= window_width // columns
 box_height= window_width // rows
 
+font = pygame.font.Font(None, 25)
 
 grid = []
 queue = []
 path = []
+
+def draw_bottom_text(line1, line2, line3):
+    # Create text surfaces for each line, S, E, Space
+    text_surface_line1 = font.render(line1, True, (0, 200, 200)) 
+    text_surface_line2 = font.render(line2, True, (200, 200, 0)) 
+    text_surface_line3 = font.render(line3, True, (200,200,200)) 
+
+    # Get the text rectangles for each line
+    text_rect_line1 = text_surface_line1.get_rect()
+    text_rect_line2 = text_surface_line2.get_rect()
+    text_rect_line3 = text_surface_line3.get_rect()
+
+    # Center the text lines at the bottom of the window
+    text_rect_line1.center = (window_width // 2, window_height + 30 - 18)  
+    text_rect_line2.center = (window_width // 2, window_height + 30 + 0)  
+    text_rect_line3.center = (window_width // 2, window_height + 30 + 18)  
+
+    # Draw the text on the window
+    window.blit(text_surface_line1, text_rect_line1)
+    window.blit(text_surface_line2, text_rect_line2)
+    window.blit(text_surface_line3, text_rect_line3)
 
 class Box:
     def __init__(self,xPos,yPos):
@@ -71,18 +93,24 @@ for i in range(columns):
 
 
 # ininitalize the starting poiint
-start_box = grid[5][5]
-start_box.start = True
-start_box.visited = True
+
+
+
 # adds starting point in the queue
-queue.append(start_box)
 
 def main():
     # Triggers the algorithm
     begin_search = False
-    target_box_set = False
     searching = True
-    target_box = None
+    # target_box = None
+    
+    # target_box_set = True
+    target_box =grid[(len(grid[0])//4)*3][len(grid)//2]
+    target_box.target = True
+
+    start_box = grid[len(grid[0])//4][len(grid)//2]
+    start_box.start = True
+    queue.append(start_box)
 
     while True:
         for event in pygame.event.get():
@@ -102,17 +130,35 @@ def main():
                     print(i,"-",j)
                     grid[i][j].wall = True
 
-                # Set Target with [2] = Right mouse button and makes sure theres no target alredy set so we cant change target anymore
-                if event.buttons[2] and not target_box_set and y<window_height:
-                    target_box_set = True
-                    i = x // box_width
-                    j = y // box_height
-                    target_box = grid[i][j]
-                    target_box.target = True
+            # Smakes sure theres no target alredy set so we cant change target anymore
             # Start Algorithm
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and target_box_set:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
+
+                if event.key == pygame.K_SPACE:
                     begin_search = True
+
+                if event.key == pygame.K_e and y<window_height:
+                    # Set to false to clear previous target node color
+                    target_box.target = False
+                    i = x // box_width
+                    j = y // box_height
+                    # if target_box.x != start_box.x and target_box.y != start_box.y:
+                    target_box = grid[i][j]
+                    # Set to trie to set color at new node
+                    target_box.target = True
+
+                if event.key == pygame.K_s and y<window_height:
+                    start_box.start = False
+                    i = x // box_width
+                    j = y // box_height
+                    start_box = grid[i][j]
+                    start_box.start = True
+                    queue.pop()
+                    queue.append(start_box)
+
 
         if begin_search:
             # if theres boxes to search in queue when its >0
@@ -168,7 +214,7 @@ def main():
 
 
 
-
+        draw_bottom_text("Press S/E to place starting/ending node", "Drag left click to place walls", "Press Space to start Dijkstra's Algorithm")
         pygame.display.flip()
 
 
